@@ -1,0 +1,190 @@
+API Documentation
+Integrate your CMS with external applications using our REST API.
+
+Getting Started
+1. Generate an API Key
+Go to your project settings and create a new API key with the appropriate permissions.
+
+2. Base URL
+https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1
+3. Authentication
+Include your API key in the x-api-key header:
+
+x-api-key: YOUR_API_KEY
+API Endpoints
+GET
+/get-placements/{site-id}
+Fetch media placements for a specific site
+
+Headers
+x-api-key: YOUR_API_KEY
+Query Parameters
+page_url (optional): Filter by specific page URL (e.g., /about)
+slot (optional): Filter by placement slot (e.g., header, hero, footer)
+Response
+
+{
+  "site_id": "uuid",
+  "placements": [
+    {
+      "id": "uuid",
+      "page_url": "/",
+      "slot": "header",
+      "selector": null,
+      "priority": 1,
+      "media": {
+        "id": "uuid",
+        "url": "https://...",
+        "title": "Logo Image",
+        "format": "webp",
+        "type": "image",
+        "width": 1920,
+        "height": 1080,
+        "size_kb": 245
+      }
+    }
+  ],
+  "total": 1,
+  "filters": {
+    "page_url": null,
+    "slot": null
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+GET
+/get-manifest/{site-id}
+Get site configuration, API documentation, and placement overview
+
+Headers
+x-api-key: YOUR_API_KEY
+Response
+
+{
+  "site": {
+    "id": "uuid",
+    "name": "My Website",
+    "base_url": "https://mysite.com",
+    "platform": "lovable",
+    "status": "active",
+    "last_updated": "2024-01-01T00:00:00Z"
+  },
+  "api": {
+    "version": "1.0",
+    "endpoints": {
+      "placements": "/get-placements/{site-id}",
+      "manifest": "/get-manifest/{site-id}"
+    },
+    "authentication": {
+      "type": "api_key",
+      "header": "x-api-key",
+      "scopes": ["media:read", "manifest:read"]
+    }
+  },
+  "placement_info": {
+    "available_slots": ["header", "hero", "footer"],
+    "pages_with_placements": ["/", "/about"],
+    "total_active_placements": 5
+  },
+  "usage_instructions": {
+    "get_all_placements": "GET /get-placements/{site-id}",
+    "get_page_placements": "GET /get-placements/{site-id}?page_url=/your-page",
+    "get_slot_placements": "GET /get-placements/{site-id}?slot=header",
+    "get_specific_placements": "GET /get-placements/{site-id}?page_url=/your-page&slot=header"
+  },
+  "cache_policy": {
+    "recommended_ttl": 300,
+    "headers": "Cache-Control: public, max-age=300"
+  },
+  "generated_at": "2024-01-01T00:00:00Z"
+}
+Code Examples
+JavaScript
+Copy
+// Get all placements for a site
+const response = await fetch('https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-placements/your-site-id', {
+  headers: {
+    'x-api-key': 'your-api-key'
+  }
+});
+const data = await response.json();
+
+// Get placements for specific page
+const pageResponse = await fetch('https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-placements/your-site-id?page_url=/about', {
+  headers: {
+    'x-api-key': 'your-api-key'
+  }
+});
+const pageData = await pageResponse.json();
+Python
+Copy
+import requests
+
+# Get site manifest
+headers = {'x-api-key': 'your-api-key'}
+
+response = requests.get(
+  'https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-manifest/your-site-id',
+  headers=headers
+)
+
+manifest = response.json()
+print(f"Site: {manifest['site']['name']}")
+print(f"Total placements: {manifest['placement_info']['total_active_placements']}")
+cURL
+Copy
+# Get all placements
+curl -H "x-api-key: your-api-key" \
+  https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-placements/your-site-id
+
+# Get placements for header slot only
+curl -H "x-api-key: your-api-key" \
+  "https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-placements/your-site-id?slot=header"
+
+# Get site manifest
+curl -H "x-api-key: your-api-key" \
+  https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-manifest/your-site-id
+WordPress Plugin
+Copy
+<?php
+// Example WordPress plugin integration
+function get_cms_placements($site_id, $api_key, $page_url = null) {
+    $url = "https://uoaxuhyocsgyzrwcghoj.supabase.co/functions/v1/get-placements/" . $site_id;
+    
+    if ($page_url) {
+        $url .= "?page_url=" . urlencode($page_url);
+    }
+    
+    $response = wp_remote_get($url, [
+        'headers' => [
+            'x-api-key' => $api_key
+        ]
+    ]);
+    
+    if (is_wp_error($response)) {
+        return false;
+    }
+    
+    return json_decode(wp_remote_retrieve_body($response), true);
+}
+
+// Usage in theme
+$placements = get_cms_placements('your-site-id', 'your-api-key', '/');
+foreach ($placements['placements'] as $placement) {
+    if ($placement['slot'] === 'header') {
+        echo '<img src="' . esc_url($placement['media']['url']) . '" alt="' . esc_attr($placement['media']['title']) . '">';
+    }
+}
+?>
+Integration Guide
+1. Get Your API Key
+Navigate to your site in the dashboard and click the API key icon to generate a new key with the required scopes.
+
+2. Choose Your Integration Method
+Direct API calls: Use fetch/curl to get placements in your JavaScript/backend
+Webhook integration: Set up automatic updates when placements change
+CMS plugins: Use our WordPress/Drupal plugins for easy integration
+3. Implement Caching
+Cache API responses for 5-10 minutes to improve performance and reduce API calls.
+
+4. Handle Errors Gracefully
+Always implement fallbacks when the API is unavailable to ensure your site remains functional.

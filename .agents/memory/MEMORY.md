@@ -1,0 +1,3 @@
+- [Google Maps JS loader](google-maps-loader.md) — useGoogleMaps must use Google's official inline bootstrap + importLibrary; plain script tag leaves importLibrary/ControlPosition undefined.
+- [Neon empty-result crash](neon-empty-result-crash.md) — neon-http driver throws "reading 'map'" on any zero-row query; treat as not-found for id lookups.
+- [Neon boolean decode bug](neon-boolean-decode.md) — this DB endpoint reads ALL boolean columns as false; cast to ::text or derive flags from non-boolean columns.

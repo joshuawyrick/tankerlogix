@@ -1,0 +1,77 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://docs.replit.com/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# Create a Production Database When Publishing
+
+> Learn how to create a production database when publishing a Replit App.
+
+When you publish a Replit App that uses a legacy Neon development database, you can create a separate production database from the **Publishing** pane. A production database keeps your live app data separate from the data you use while building.
+
+<Info>
+  This guide is for Replit Apps that still use Neon for the development database. If your app uses Helium, Replit's current database infrastructure, production databases are created for you when needed during publishing.
+</Info>
+
+## Before you start
+
+Check whether your app still uses Neon for the development database:
+
+1. Open the **Database** tool in your Replit App.
+2. Open the **Settings** tab.
+3. Check the `DATABASE_URL` value.
+
+<Frame caption="Database connection settings">
+  <img src="https://mintcdn.com/replit/POV-hgBX2MTWPuQ9/images/databases/development-database-settings.png?fit=max&auto=format&n=POV-hgBX2MTWPuQ9&q=85&s=8b5abc013a66b1ee168d557b5ab04df7" alt="Database settings showing the DATABASE_URL value" width="1435" height="661" data-path="images/databases/development-database-settings.png" />
+</Frame>
+
+If the value contains `neon.tech`, your app is using a legacy Neon development database. If it contains `helium`, your app is using Helium.
+
+For more details, see [Legacy Development Database](/cloud-services/storage-and-databases/sql-database#legacy-development-database).
+
+## Create the production database
+
+To create a production database while publishing:
+
+1. Open **Publishing**.
+2. Choose **Publish**. If your app is already published, choose **Republish**.
+3. Open **Production database settings**.
+4. Turn on **Create production database**.
+5. To copy your current development data into production, turn on **Set up your production database with your current development data**.
+6. Continue publishing your app.
+
+<Frame caption="Production database settings in Publishing">
+  <img src="https://mintcdn.com/replit/LrPHebhkEtjoxAa5/images/databases/shared-database-migration/production-database-settings.png?fit=max&auto=format&n=LrPHebhkEtjoxAa5&q=85&s=a5ca44635f062423aaa9c8d8b73753e3" alt="Publish settings showing Create production database options" width="1406" height="1207" data-path="images/databases/shared-database-migration/production-database-settings.png" />
+</Frame>
+
+When you turn on **Create production database**, Replit creates a production database for your published app. By default, Replit prepares the production database schema from your development database.
+
+When you also turn on **Set up your production database with your current development data**, Replit initializes the production database with your development schema and data.
+
+<Warning>
+  Only copy development data into production if that data is safe to use in your live app. Development data can include test accounts, sample records, or incomplete content.
+</Warning>
+
+## After publishing
+
+After publishing finishes, your published app uses the production database. Your Project Editor continues to use the development database, so future development changes do not directly modify live data.
+
+<Note>
+  Replit is also upgrading development databases from Neon to Helium. This
+  upgrade only applies to development databases in most cases. If you create a
+  production database before the upgrade, your published app keeps using that
+  production database. To learn what changes during the upgrade, see [Database
+  Upgrade](/cloud-services/storage-and-databases/database-upgrade).
+</Note>
+
+To view or manage the production database:
+
+1. Open the **Database** tool.
+2. Select **Production** from the database selector.
+3. Use the **My data** and **Settings** tabs to inspect data, connection details, and usage.
+
+## Related docs
+
+* [Production Databases](/cloud-services/storage-and-databases/production-databases)
+* [Database](/cloud-services/storage-and-databases/sql-database)
+* [Database Upgrade](/cloud-services/storage-and-databases/database-upgrade)
+* [About Publishing](/cloud-services/deployments/about-deployments)

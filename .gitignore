@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Development data files (don't commit to avoid overwriting production)
+data/
+!data/.gitkeep
+
+# Production data (never commit)
+production_data/

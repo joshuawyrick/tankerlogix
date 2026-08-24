@@ -1,0 +1,167 @@
+Prompt 1 — Replit (Express + React + Vite + Tailwind)
+
+Title: Crude & Diesel Haul Rate Calculator (Keep API key server‑side)
+
+Plain‑English: what to build and how it works
+
+Build a web app that helps a crude‑oil and diesel trucking operator decide what to charge for a given haul. The app lets me:
+
+Upload spreadsheets of my pickup and drop‑off locations (with lat/long), optional route overrides, and my default settings (target hourly earnings, default MPH, base yard, typical pickup/drop‑off/queue times).
+
+Pick a pickup and drop‑off site from those lists, choose load type (crude = paid per barrel, diesel = paid per gallon), enter how many units I’m hauling, set my average MPH when loaded and empty, and set the minutes I usually spend at pickup/drop‑off including queue and buffer for traffic.
+
+The app asks Google Maps for multiple route options between those coordinates. We only use Google’s distance (miles) and the map polyline—we ignore Google’s time because I want to use my own MPH.
+
+For every alternative route, the app calculates: driving hours using my MPH, adds my on‑site minutes and buffer, and multiplies by my target $/hour. From that required revenue it computes a suggested price: $ per barrel for crude or $ per gallon for diesel. It also shows $ per mile (total) and $ per mile (loaded).
+
+I can include deadhead legs from my base yard to pickup and from drop‑off back to base. Empty legs can reuse the same miles or be computed separately. I can also save scenarios, export to CSV/PDF, and see a map with each alternative highlighted.
+
+Names stay human‑friendly (e.g., “Pentland Station”). The app auto‑generates a safe internal ID (UPPER_SNAKE_CASE) from the name during import. I never need to type underscores.
+
+Security: My Google Maps API key must never appear in the browser. The React client calls an Express server route which injects the key and talks to Google.
+
+Technical build spec
+Stack
+
+Frontend: React 18 + TypeScript + Vite + Tailwind (shadcn/ui optional)
+
+Backend: Node/Express inside Replit
+
+Secrets: GOOGLE_MAPS_API_KEY stored in Replit Secrets; never sent to the client
+
+Persistence: JSON files in /data (locations.json, config.json, overrides.json, routeCache.json, scenarios.json). Provide functions to swap to SQLite later.
+
+Pages
+
+/upload – CSV/XLSX upload → column mapper → validation → save
+
+/locations – table + map; edit per‑site defaults
+
+/calculator – inputs (left), results (right), map with alternatives
+
+/scenarios – saved runs list (open/duplicate/delete/export)
+
+/settings – base yard, defaults, units; helper to set Replit Secret
+
+Data contracts
+
+locations.json (array)
+
+{
+  "location_id": "PENTLAND_STATION",   // auto‑generated from name
+  "name": "Pentland Station",
+  "role": "pickup|dropoff|both",
+  "lat": 35.1234,
+  "lon": -119.1234,
+  "allowed_load_types": "crude|diesel|crude,diesel",
+  "default_units_loaded": 155,
+  "default_pickup_min": 45,
+  "default_dropoff_min": 60,
+  "pickup_queue_min": 20,
+  "dropoff_queue_min": 15,
+  "api_gravity": 17.0,
+  "notes": ""
+}
+
+config.json
+
+{
+  "avg_mph_loaded_default": 40,
+  "avg_mph_empty_default": 45,
+  "hourly_target_default_usd": 135,
+  "traffic_buffer_min_default": 20,
+  "include_deadhead_default": true,
+  "assume_symmetric_route_for_empty": true,
+  "base_yard_name": "Yard",
+  "base_lat": 35.3,
+  "base_lon": -119.1,
+  "diesel_units_are_gallons": true,
+  "crude_units_are_barrels": true,
+  "barrels_to_gallons_factor": 42
+}
+
+overrides.json (array)
+
+{ "pickup_location_id":"X", "dropoff_location_id":"Y", "mph_loaded_override":38, "mph_empty_override":48, "default_units_loaded_override":150, "notes":"foggy route" }
+
+routeCache.json (keyed by origin/dest/waypoints)
+
+{
+  "origin_id|dest_id|sig": { "created_at": 1730000000, "routes": [{"id":"r1","summary":"CA-99","miles":72.4,"polyline":"..."}] }
+}
+
+scenarios.json – saved input + chosen route + outputs
+
+Upload/clean rules
+
+Accept CSV/XLSX for: locations_template_v2_no_id.csv, routes_overrides_template.csv, app_config_template.csv
+
+Column mapper allows arbitrary headers; map to expected keys
+
+Auto‑ID: if location_id missing, derive from name as UPPER_SNAKE_CASE (spaces→_, strip non‑alphanumerics)
+
+Validate CA bounds: 32–42 lat, −125 to −114 lon; if lon > 0, suggest negation
+
+Reject rows without name/role/lat/lon; show error CSV
+
+Express routes
+
+POST /api/routes → body: { origin:{lat,lon}, destination:{lat,lon}, waypoints?:[], avoid?:{tolls:boolean,ferries:boolean}, alternatives:true }
+
+Read GOOGLE_MAPS_API_KEY from env
+
+Call Google Directions (alternatives=true)
+
+Compute miles = total meters / 1609.34
+
+Return { routes:[{ id, summary, miles, polyline }] }
+
+Cache results in routeCache.json (TTL 30 days)
+
+Calculator formulas
+drive_time_hr = (d_loaded_mi / mph_loaded) + (d_empty_mi / mph_empty)
+work_time_hr  = (pickup_work + dropoff_work + pickup_queue + dropoff_queue + buffer) / 60
+total_hours   = drive_time_hr + work_time_hr
+required_revenue = total_hours * hourly_target
+
+
+// Pricing
+if load_type == 'crude':
+  rate_per_unit = required_revenue / barrels_loaded
+else if load_type == 'diesel':
+  rate_per_unit = required_revenue / gallons_loaded
+
+
+rate_per_mile_total  = required_revenue / (d_loaded_mi + d_empty_mi)
+rate_per_mile_loaded = required_revenue / d_loaded_mi
+Deadhead logic
+
+If include_deadhead=true:
+
+Base→Pickup (empty), Drop‑off→Base (empty)
+
+If assume_symmetric_route_for_empty=true, use same miles as loaded route for return legs; otherwise call /api/routes for each empty leg
+
+UI specifics
+
+Inputs left panel; results right panel with table of alternatives (sortable); map shows selected polylines
+
+Unit labels switch automatically: crude→barrels, diesel→gallons
+
+Highlight the lowest rate_per_unit in green
+
+Buttons: Save Scenario, Export CSV, Export PDF (with map snapshot)
+
+Acceptance tests
+
+Upload locations without location_id → IDs auto‑generated; positive longitudes are flagged with a fix suggestion
+
+Selecting a pair with alternatives shows ≥2 routes; times computed from my MPH, not Google’s
+
+Changing hourly target instantly updates $ per barrel/gallon
+
+Toggling deadhead changes empty miles/time and pricing
+
+Saved scenario reopens identically
+
+API key never appears in network logs or client code
